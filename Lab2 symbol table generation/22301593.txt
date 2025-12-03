@@ -1,0 +1,1 @@
+added some part in symbol_info file
