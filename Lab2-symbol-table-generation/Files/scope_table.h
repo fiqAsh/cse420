@@ -57,7 +57,7 @@ public:
         int index = hash_function(name);
         for (auto it = table[index].begin(); it != table[index].end(); ++it)
         {
-            if ((*it)->get_name() == name)
+            if ((*it)->getname() == name)
             {
                 return *it;
             }
@@ -68,13 +68,13 @@ public:
     // Insert symbol (only if not already present in this scope)
     bool insert_in_scope(symbol_info* symbol)
     {
-        string name = symbol->get_name();
+        string name = symbol->getname();
         int index = hash_function(name);
 
         // Check if already exists in this bucket
         for (auto it = table[index].begin(); it != table[index].end(); ++it)
         {
-            if ((*it)->get_name() == name)
+            if ((*it)->getname() == name)
             {
                 return false; // Already exists → insertion failed
             }
@@ -100,7 +100,7 @@ public:
 
         for (auto it = bucket.begin(); it != bucket.end(); ++it)
         {
-            if ((*it)->get_name() == name)
+            if ((*it)->getname() == name)
             {
                 delete *it;        // Free the symbol_info object
                 bucket.erase(it);  // Remove from list
@@ -122,7 +122,7 @@ public:
                 outlog << i << " --> ";
                 for (auto symbol : table[i])
                 {
-                    outlog << "< " << symbol->get_name()
+                    outlog << "< " << symbol->getname()
                            << " : " << symbol->get_var_type();
 
                     if (symbol->get_ID_type() == "ARRAY")
