@@ -20,11 +20,9 @@ private:
     // Hash function: sum of ASCII values of characters in name, then mod bucket_count
     int hash_function(string name)
     {
-        unsigned long long hash = 0;
+        unsigned int hash = 0;
         for (char c : name)
-        {
-            hash += (unsigned char)c;  // Use unsigned char to avoid negative values
-        }
+            hash = hash * 31 + c;  // Good distribution
         return hash % bucket_count;
     }
 
@@ -117,34 +115,45 @@ public:
 
         for (int i = 0; i < bucket_count; i++)
         {
-            if (!table[i].empty())
+            if (table[i].empty()) continue;
+
+            outlog << i << " --> ";
+            for (auto symbol : table[i])
             {
-                outlog << i << " --> ";
-                for (auto symbol : table[i])
+                outlog << "< " << symbol->getname() << " : " << symbol->get_type() << " > ";
+
+                if (symbol->get_ID_type() == "FUNCTION")
                 {
-                    outlog << "< " << symbol->getname()
-                           << " : " << symbol->get_var_type();
-
-                    if (symbol->get_ID_type() == "ARRAY")
-                        outlog << "[]";
-                    else if (symbol->get_ID_type() == "FUNCTION")
+                    outlog << endl << "Function Definition" << endl;
+                    outlog << "Return Type: " << symbol->get_var_type() << endl;
+                    outlog << "Number of Parameters: " << symbol->get_param_type().size() << endl;
+                    outlog << "Parameter Details: ";
+                    for (size_t j = 0; j < symbol->get_param_name().size(); j++)
                     {
-                        outlog << "(";
-                        auto params = symbol->get_param_type();
-                        for (size_t j = 0; j < params.size(); j++)
-                        {
-                            outlog << params[j];
-                            if (j < params.size() - 1) outlog << ",";
-                        }
-                        outlog << ")";
-                    }
+                        if (!symbol->get_param_name()[j].empty())
+                            outlog << symbol->get_param_type()[j] << " " << symbol->get_param_name()[j];
+                        else
+                            outlog << symbol->get_param_type()[j];
 
-                    outlog << " >  ";
+                        if (j < symbol->get_param_name().size()-1) outlog << ", ";
+                    }
+                    outlog << endl;
                 }
-                outlog << endl;
+                else if (symbol->get_ID_type() == "ARRAY")
+                {
+                    outlog << endl << "Array" << endl;
+                    outlog << "Type: " << symbol->get_var_type() << endl;
+                    outlog << "Size: " << symbol->get_arr_size() << endl;
+                }
+                else // VARIABLE
+                {
+                    outlog << endl << "Variable" << endl;
+                    outlog << "Type: " << symbol->get_var_type() << endl;
+                }
             }
+            outlog << endl;
         }
-        outlog << endl; // Extra newline for separation
+        outlog << endl;
     }
 
     // Destructor: delete all symbol_info objects in this scope

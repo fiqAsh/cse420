@@ -10,7 +10,7 @@ class symbol_table
 private:
     scope_table* current_scope;
     int bucket_count;
-    int current_scope_id;  // To generate unique IDs: 1, 2, 3, ...
+    int current_scope_id;  // Starts from 1
 
 public:
     // Constructor: creates global scope (ID = 1)
@@ -19,10 +19,9 @@ public:
         this->bucket_count = bucket_count;
         this->current_scope_id = 1;
         this->current_scope = new scope_table(bucket_count, current_scope_id, nullptr);
-        // Global scope has no parent
     }
 
-    // Destructor: delete all scopes from bottom up
+    // Destructor: delete all scopes
     ~symbol_table()
     {
         scope_table* temp;
@@ -30,83 +29,77 @@ public:
         {
             temp = current_scope;
             current_scope = current_scope->get_parent_scope();
-            delete temp;  // This will call scope_table destructor → frees all symbols
+            delete temp;
         }
     }
 
-    // Create a new scope (child of current)
-    void enter_scope()
+    // === ENTER & EXIT SCOPE NOW TAKE outlog AS PARAMETER ===
+    void enter_scope(ofstream& outlog)
     {
         current_scope_id++;
         scope_table* new_scope = new scope_table(bucket_count, current_scope_id, current_scope);
         current_scope = new_scope;
+
+        outlog << "New ScopeTable with ID " << current_scope_id << " created" << endl << endl;
     }
 
-    // Remove current scope and go back to parent
-    // Returns false if trying to exit global scope
-    bool exit_scope()
+    bool exit_scope(ofstream& outlog)
     {
         if (current_scope->get_parent_scope() == nullptr)
-        {
-            // Cannot exit global scope
-            return false;
-        }
+            return false;  // cannot exit global scope
+
+        outlog << "Scopetable with ID " << current_scope->get_unique_id() << " removed" << endl << endl;
 
         scope_table* temp = current_scope;
         current_scope = current_scope->get_parent_scope();
-        delete temp;  // Automatically deletes all symbols in this scope
+        delete temp;
         return true;
     }
 
-    // Insert symbol into CURRENT scope only
+    // Insert into current scope
     bool insert(symbol_info* symbol)
     {
         return current_scope->insert_in_scope(symbol);
     }
 
-    // Overloaded: insert by name and type (convenient for parser)
     bool insert(string name, string type)
     {
-        symbol_info* sym = new symbol_info(name, type, "", "", -1, {}, {});
+        symbol_info* sym = new symbol_info(name, type);
         return insert(sym);
     }
 
-    // Lookup symbol in current scope and all parent scopes
+    // Lookup in all scopes (current → global)
     symbol_info* lookup(string name)
     {
-        scope_table* temp = current_scope;
-        while (temp != nullptr)
+        scope_table* temp_scope = current_scope;
+        while (temp_scope != nullptr)
         {
-            symbol_info* found = temp->lookup_in_scope(name);
-            if (found != nullptr)
-                return found;
-            temp = temp->get_parent_scope();
+            symbol_info* found = temp_scope->lookup_in_scope(name);
+            if (found != nullptr) return found;
+            temp_scope = temp_scope->get_parent_scope();
         }
-        return nullptr; // Not found anywhere
+        return nullptr;
     }
 
-    // Overloaded: lookup using symbol_info object (by name)
     symbol_info* lookup(symbol_info* symbol)
     {
         return lookup(symbol->getname());
     }
 
-    // Lookup only in current scope (useful for redeclaration check)
     symbol_info* lookup_current_scope(string name)
     {
         return current_scope->lookup_in_scope(name);
     }
 
-    // Print only current scope
+    // Print functions
     void print_current_scope(ofstream& outlog)
     {
         current_scope->print_scope_table(outlog);
     }
 
-    // Print ALL scopes from current → global
     void print_all_scopes(ofstream& outlog)
     {
-        outlog << "################################" << endl << endl;
+        outlog << "################################" << endl;
 
         scope_table* temp = current_scope;
         while (temp != nullptr)
@@ -115,16 +108,15 @@ public:
             temp = temp->get_parent_scope();
         }
 
-        outlog << "################################" << endl << endl;
+        outlog << "################################" << endl;
     }
 
-    // Optional: get current scope ID (for debugging)
+    // Optional helpers
     int get_current_scope_id()
     {
         return current_scope->get_unique_id();
     }
 
-    // Optional: get current scope pointer
     scope_table* get_current_scope()
     {
         return current_scope;
