@@ -100,6 +100,7 @@ public:
     void print_all_scopes(ofstream& outlog)
     {
         outlog << "################################" << endl;
+        outlog << endl;
 
         scope_table* temp = current_scope;
         while (temp != nullptr)
@@ -109,6 +110,7 @@ public:
         }
 
         outlog << "################################" << endl;
+        outlog << endl;
     }
 
     // Optional helpers

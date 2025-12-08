@@ -120,6 +120,7 @@ public:
             outlog << i << " --> ";
             for (auto symbol : table[i])
             {
+                outlog << endl;
                 outlog << "< " << symbol->getname() << " : " << symbol->get_type() << " > ";
 
                 if (symbol->get_ID_type() == "FUNCTION")
@@ -137,7 +138,7 @@ public:
 
                         if (j < symbol->get_param_name().size()-1) outlog << ", ";
                     }
-                    outlog << endl;
+                    
                 }
                 else if (symbol->get_ID_type() == "ARRAY")
                 {
