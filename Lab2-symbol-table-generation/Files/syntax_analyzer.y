@@ -1,8 +1,6 @@
 %{
 
 #include "symbol_table.h"
-#include <bits/stdc++.h>
-using namespace std;
 
 #define YYSTYPE symbol_info*
 
@@ -19,21 +17,15 @@ int lines = 1;
 
 ofstream outlog;
 
-symbol_table *sym_table;
-
-string current_var_type = "";
-vector<string> param_types;
-vector<string> param_names;
-
-void yyerror(const char *s) {
-    outlog << "Error at line " << lines << ": " << s << endl << endl;
-}
-bool entering_function_body = false;
-
 // you may declare other necessary variables here to store necessary info
 // such as current variable type, variable list, function name, return type, function parameter types, parameters names etc.
 
+void yyerror(char *s)
+{
+	outlog<<"At line "<<lines<<" "<<s<<endl<<endl;
 
+    // you may need to reinitialize variables if you find an error
+}
 
 %}
 
@@ -45,17 +37,13 @@ bool entering_function_body = false;
 %%
 
 start : program
-    {
-        outlog << "At line no: " << lines << " start : program " << endl << endl;
-        
-        outlog << "Symbol Table" << endl;
-				outlog << endl;
-        
-        sym_table->print_all_scopes(outlog);
-        
-        outlog << "Total lines: " << lines << endl;
-    }
-    ;
+	{
+		outlog<<"At line no: "<<lines<<" start : program "<<endl<<endl;
+		outlog<<"Symbol Table"<<endl<<endl;
+		
+		// Print your whole symbol table here
+	}
+	;
 
 program : program unit
 	{
@@ -89,204 +77,106 @@ unit : var_declaration
 	 }
      ;
 
-func_definition : type_specifier ID LPAREN parameter_list RPAREN
-    {
-        string func_name = $2->getname();
-        string ret_type = $1->getname();
-        symbol_info* func_sym = new symbol_info(func_name, "ID", "FUNCTION", ret_type, -1, param_types, param_names);
-        if (sym_table->lookup_current_scope(func_name) != nullptr) {
-            outlog << "Error at line " << lines << ": Multiple declaration of function " << func_name << endl << endl;
-            delete func_sym;
-        } else {
-            sym_table->insert(func_sym);
-        }
-        entering_function_body = true;  // Set flag for parameter insertion in compound_statement
-    }
-    compound_statement
-    {
-        outlog << "At line no: " << lines
-               << " func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement "
-               << endl << endl;
-        string code = $1->getname() + " " + $2->getname() + "(" + $4->getname() + ")\n" + $7->getname();
-        outlog << code << endl << endl;
-        $$ = new symbol_info(code, "func_def");
-        param_types.clear();  // Clear in case of errors
-        param_names.clear();
-    }
-    | type_specifier ID LPAREN RPAREN
-    {
-        string func_name = $2->getname();
-        string ret_type = $1->getname();
-        symbol_info* func_sym = new symbol_info(func_name, "ID", "FUNCTION", ret_type);
-        if (sym_table->lookup_current_scope(func_name)) {
-            outlog << "Error at line " << lines
-                   << ": Multiple declaration of function " << func_name << endl << endl;
-            delete func_sym;
-        } else {
-            sym_table->insert(func_sym);
-        }
-        entering_function_body = true;
-    }
-    compound_statement
-    {
-        outlog << "At line no: " << lines
-               << " func_definition : type_specifier ID LPAREN RPAREN compound_statement "
-               << endl << endl;
-        string code = $1->getname() + " " + $2->getname() + "()\n" + $6->getname();
-        outlog << code << endl << endl;
-        $$ = new symbol_info(code, "func_def");
-        param_types.clear();
-        param_names.clear();
-    }
-    ;
+func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement
+		{	
+			outlog<<"At line no: "<<lines<<" func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement "<<endl<<endl;
+			outlog<<$1->getname()<<" "<<$2->getname()<<"("+$4->getname()+")\n"<<$6->getname()<<endl<<endl;
+			
+			$$ = new symbol_info($1->getname()+" "+$2->getname()+"("+$4->getname()+")\n"+$6->getname(),"func_def");	
+			
+			// The function definition is complete.
+            // You can now insert necessary information about the function into the symbol table
+            // However, note that the scope of the function and the scope of the compound statement are different.
+		}
+		| type_specifier ID LPAREN RPAREN compound_statement
+		{
+			
+			outlog<<"At line no: "<<lines<<" func_definition : type_specifier ID LPAREN RPAREN compound_statement "<<endl<<endl;
+			outlog<<$1->getname()<<" "<<$2->getname()<<"()\n"<<$5->getname()<<endl<<endl;
+			
+			$$ = new symbol_info($1->getname()+" "+$2->getname()+"()\n"+$5->getname(),"func_def");	
+			
+			// The function definition is complete.
+            // You can now insert necessary information about the function into the symbol table
+            // However, note that the scope of the function and the scope of the compound statement are different.
+		}
+ 		;
 
 parameter_list : parameter_list COMMA type_specifier ID
-    {
-        outlog << "At line no: " << lines << " parameter_list : parameter_list COMMA type_specifier ID " << endl << endl;
-        outlog << $1->getname() << "," << $3->getname() << " " << $4->getname() << endl << endl;
+		{
+			outlog<<"At line no: "<<lines<<" parameter_list : parameter_list COMMA type_specifier ID "<<endl<<endl;
+			outlog<<$1->getname()<<","<<$3->getname()<<" "<<$4->getname()<<endl<<endl;
+					
+			$$ = new symbol_info($1->getname()+","+$3->getname()+" "+$4->getname(),"param_list");
+			
+            // store the necessary information about the function parameters
+            // They will be needed when you want to enter the function into the symbol table
+		}
+		| parameter_list COMMA type_specifier
+		{
+			outlog<<"At line no: "<<lines<<" parameter_list : parameter_list COMMA type_specifier "<<endl<<endl;
+			outlog<<$1->getname()<<","<<$3->getname()<<endl<<endl;
+			
+			$$ = new symbol_info($1->getname()+","+$3->getname(),"param_list");
+			
+            // store the necessary information about the function parameters
+            // They will be needed when you want to enter the function into the symbol table
+		}
+ 		| type_specifier ID
+ 		{
+			outlog<<"At line no: "<<lines<<" parameter_list : type_specifier ID "<<endl<<endl;
+			outlog<<$1->getname()<<" "<<$2->getname()<<endl<<endl;
+			
+			$$ = new symbol_info($1->getname()+" "+$2->getname(),"param_list");
+			
+            // store the necessary information about the function parameters
+            // They will be needed when you want to enter the function into the symbol table
+		}
+		| type_specifier
+		{
+			outlog<<"At line no: "<<lines<<" parameter_list : type_specifier "<<endl<<endl;
+			outlog<<$1->getname()<<endl<<endl;
+			
+			$$ = new symbol_info($1->getname(),"param_list");
+			
+            // store the necessary information about the function parameters
+            // They will be needed when you want to enter the function into the symbol table
+		}
+ 		;
 
-        param_types.push_back($3->getname());
-        param_names.push_back($4->getname());
-
-        $$ = new symbol_info($1->getname() + "," + $3->getname() + " " + $4->getname(), "param_list");
-    }
-    | parameter_list COMMA type_specifier
-    {
-        outlog << "At line no: " << lines << " parameter_list : parameter_list COMMA type_specifier " << endl << endl;
-        outlog << $1->getname() << "," << $3->getname() << endl << endl;
-
-        param_types.push_back($3->getname());
-        param_names.push_back("");
-
-        $$ = new symbol_info($1->getname() + "," + $3->getname(), "param_list");
-    }
-    | type_specifier ID
-    {
-        outlog << "At line no: " << lines << " parameter_list : type_specifier ID " << endl << endl;
-        outlog << $1->getname() << " " << $2->getname() << endl << endl;
-
-        param_types.push_back($1->getname());
-        param_names.push_back($2->getname());
-
-        $$ = new symbol_info($1->getname() + " " + $2->getname(), "param_list");
-    }
-    | type_specifier
-    {
-        outlog << "At line no: " << lines << " parameter_list : type_specifier " << endl << endl;
-        outlog << $1->getname() << endl << endl;
-
-        param_types.push_back($1->getname());
-        param_names.push_back("");
-
-        $$ = new symbol_info($1->getname(), "param_list");
-    }
-    ;
-
-compound_statement : LCURL
-    {
-        sym_table->enter_scope(outlog);
-        if (entering_function_body) {
-            // Insert parameters into the new scope
-            for (size_t i = 0; i < param_names.size(); i++) {
-                if (param_names[i].empty()) continue;
-                symbol_info* param = new symbol_info(param_names[i], "ID", "VARIABLE", param_types[i]);
-                if (!sym_table->insert(param)) {
-                    outlog << "Error at line " << lines << ": Redefinition of parameter " << param_names[i] << endl << endl;
-                    delete param;
-                }
-            }
-            param_types.clear();
-            param_names.clear();
-            entering_function_body = false;  // Reset immediately for nested blocks
-        }
-    }
-    statements RCURL
-    {
-        outlog << "At line no: " << lines
-               << " compound_statement : LCURL statements RCURL " << endl << endl;
-        outlog << "{\n" << $3->getname() << "\n}" << endl << endl;
-        
-        sym_table->print_all_scopes(outlog);
-        
-        sym_table->exit_scope(outlog);
-        $$ = new symbol_info("{\n" + $3->getname() + "\n}", "comp_stmnt");
-    }
-    | LCURL
-    {
-        sym_table->enter_scope(outlog);
-        if (entering_function_body) {
-            // Insert parameters (for empty param case)
-            for (size_t i = 0; i < param_names.size(); i++) {
-                if (param_names[i].empty()) continue;
-                symbol_info* param = new symbol_info(param_names[i], "ID", "VARIABLE", param_types[i]);
-                if (!sym_table->insert(param)) {
-                    outlog << "Error at line " << lines << ": Redefinition of parameter " << param_names[i] << endl << endl;
-                    delete param;
-                }
-            }
-            param_types.clear();
-            param_names.clear();
-            entering_function_body = false;
-        }
-    }
-    RCURL
-    {
-        outlog << "At line no: " << lines
-               << " compound_statement : LCURL RCURL " << endl << endl;
-        outlog << "{\n}" << endl << endl;
-        outlog << "################################" << endl;
-        sym_table->print_all_scopes(outlog);
-        outlog << "################################" << endl;
-        sym_table->exit_scope(outlog);
-        $$ = new symbol_info("{\n}", "comp_stmnt");
-    }
-    ;
+compound_statement : LCURL statements RCURL
+			{ 
+ 		    	outlog<<"At line no: "<<lines<<" compound_statement : LCURL statements RCURL "<<endl<<endl;
+				outlog<<"{\n"+$3->getname()+"\n}"<<endl<<endl;
+				
+				$$ = new symbol_info("{\n"+$3->getname()+"\n}","comp_stmnt");
+				
+                // The compound statement is complete.
+                // Print the symbol table here and exit the scope
+                // Note that function parameters should be in the current scope
+ 		    }
+ 		    | LCURL RCURL
+ 		    { 
+ 		    	outlog<<"At line no: "<<lines<<" compound_statement : LCURL RCURL "<<endl<<endl;
+				outlog<<"{\n}"<<endl<<endl;
+				
+				$$ = new symbol_info("{\n}","comp_stmnt");
+				
+				// The compound statement is complete.
+                // Print the symbol table here and exit the scope
+ 		    }
+ 		    ;
  		    
 var_declaration : type_specifier declaration_list SEMICOLON
-    {
-        current_var_type = $1->getname();
-
-        outlog << "At line no: " << lines 
-               << " var_declaration : type_specifier declaration_list SEMICOLON " 
-               << endl << endl;
-        outlog << current_var_type << " " << $2->getname() << ";" << endl << endl;
-
-        // ---- INSERT ALL VARIABLES INTO SYMBOL TABLE ----
-        string decl = $2->getname();
-        stringstream ss(decl);
-        string token;
-        while (getline(ss, token, ',')) {
-            string name;
-            int size = -1;
-            size_t pos = token.find('[');
-            if (pos != string::npos) {
-                name = token.substr(0, pos);
-                string sz_str = token.substr(pos+1, token.find(']') - pos - 1);
-                size = sz_str.empty() ? 0 : stoi(sz_str);
-            } else {
-                name = token;
-            }
-            // trim whitespace
-            name.erase(0, name.find_first_not_of(" \t"));
-            name.erase(name.find_last_not_of(" \t") + 1);
-
-            if (sym_table->lookup_current_scope(name)) {
-                outlog << "Error at line " << lines 
-                       << ": Multiple declaration of " << name << endl << endl;
-            } else {
-                symbol_info* sym;
-                if (size != -1) {
-                    sym = new symbol_info(name, "ID", "ARRAY", current_var_type, size);
-                } else {
-                    sym = new symbol_info(name, "ID", "VARIABLE", current_var_type);
-                }
-                sym_table->insert(sym);
-            }
-        }
-
-        $$ = new symbol_info(current_var_type + " " + $2->getname() + ";", "var_dec");
-    }
-    ;
+		 {
+			outlog<<"At line no: "<<lines<<" var_declaration : type_specifier declaration_list SEMICOLON "<<endl<<endl;
+			outlog<<$1->getname()<<" "<<$2->getname()<<";"<<endl<<endl;
+			
+			$$ = new symbol_info($1->getname()+" "+$2->getname()+";","var_dec");
+			
+			// Insert necessary information about the variables in the symbol table
+		 }
+ 		 ;
 
 type_specifier : INT
 		{
@@ -312,36 +202,39 @@ type_specifier : INT
  		;
 
 declaration_list : declaration_list COMMA ID
-    {
-        outlog << "At line no: " << lines 
-               << " declaration_list : declaration_list COMMA ID " << endl << endl;
-        outlog << $1->getname() << "," << $3->getname() << endl << endl;
-        $$ = new symbol_info($1->getname() + "," + $3->getname(), "decl_list");
-    }
-    | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD
-    {
-        outlog << "At line no: " << lines 
-               << " declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD " << endl << endl;
-        string arr = $3->getname() + "[" + $5->getname() + "]";
-        outlog << $1->getname() << "," << arr << endl << endl;
-        $$ = new symbol_info($1->getname() + "," + arr, "decl_list");
-    }
-    | ID
-    {
-        outlog << "At line no: " << lines 
-               << " declaration_list : ID " << endl << endl;
-        outlog << $1->getname() << endl << endl;
-        $$ = new symbol_info($1->getname(), "decl_list");
-    }
-    | ID LTHIRD CONST_INT RTHIRD
-    {
-        outlog << "At line no: " << lines 
-               << " declaration_list : ID LTHIRD CONST_INT RTHIRD " << endl << endl;
-        string arr = $1->getname() + "[" + $3->getname() + "]";
-        outlog << arr << endl << endl;
-        $$ = new symbol_info(arr, "decl_list");
-    }
-    ;	  
+		  {
+ 		  	outlog<<"At line no: "<<lines<<" declaration_list : declaration_list COMMA ID "<<endl<<endl;
+ 		  	outlog<<$1->getname()+","<<$3->getname()<<endl<<endl;
+
+            // you may need to store the variable names to insert them in symbol table here or later
+			
+ 		  }
+ 		  | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD //array after some declaration
+ 		  {
+ 		  	outlog<<"At line no: "<<lines<<" declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD "<<endl<<endl;
+ 		  	outlog<<$1->getname()+","<<$3->getname()<<"["<<$5->getname()<<"]"<<endl<<endl;
+
+            // you may need to store the variable names to insert them in symbol table here or later
+			
+ 		  }
+ 		  |ID
+ 		  {
+ 		  	outlog<<"At line no: "<<lines<<" declaration_list : ID "<<endl<<endl;
+			outlog<<$1->getname()<<endl<<endl;
+
+            // you may need to store the variable names to insert them in symbol table here or later
+			
+ 		  }
+ 		  | ID LTHIRD CONST_INT RTHIRD //array
+ 		  {
+ 		  	outlog<<"At line no: "<<lines<<" declaration_list : ID LTHIRD CONST_INT RTHIRD "<<endl<<endl;
+			outlog<<$1->getname()<<"["<<$3->getname()<<"]"<<endl<<endl;
+
+            // you may need to store the variable names to insert them in symbol table here or later
+            
+ 		  }
+ 		  ;
+ 		  
 
 statements : statement
 	   {
@@ -659,28 +552,28 @@ arguments : arguments COMMA logic_expression
 
 int main(int argc, char *argv[])
 {
-    if(argc != 2) {
-        cout << "Please provide input file" << endl;
-        return 0;
-    }
+	if(argc != 2) 
+	{
+		cout<<"Please input file name"<<endl;
+		return 0;
+	}
+	yyin = fopen(argv[1], "r");
+	outlog.open("my_log.txt", ios::trunc);
+	
+	if(yyin == NULL)
+	{
+		cout<<"Couldn't open file"<<endl;
+		return 0;
+	}
+	// Enter the global or the first scope here
 
-    yyin = fopen(argv[1], "r");
-    outlog.open("log.txt", ios::trunc);
-
-    if(!yyin) {
-        cout << "File not found" << endl;
-        return 0;
-    }
-
-    sym_table = new symbol_table(13);
-		outlog << "New ScopeTable with ID 1 created" << endl << endl;
-
-    yyparse();
-
-    
-    outlog.close();
-    fclose(yyin);
-
-    delete sym_table;
-    return 0;
+	yyparse();
+	
+	outlog<<endl<<"Total lines: "<<lines<<endl;
+	
+	outlog.close();
+	
+	fclose(yyin);
+	
+	return 0;
 }
