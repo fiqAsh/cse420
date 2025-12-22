@@ -1,58 +1,70 @@
-#ifndef SYMBOL_INFO_H
-#define SYMBOL_INFO_H
-
 #include <bits/stdc++.h>
 using namespace std;
 
-class symbol_info
-{
+class symbol_info {
 private:
     string name;
     string type;
-    string ID_type;        // "VARIABLE", "ARRAY", "FUNCTION"
-    string var_type;       // "int", "float", "void", etc.
-    int arr_size;          // size if array, -1 otherwise
-    vector<string> param_type;
-    vector<string> param_name;
+    string symbol_category;
+    string data_type;
+    int array_size;
+    string return_type;
+    vector<string> param_types;
 
 public:
-    // Default constructor
-    symbol_info() : arr_size(-1) {}
-
-    // Constructor for simple variables (most common)
-    symbol_info(string name, string type)
-        : name(name), type(type), ID_type("VARIABLE"), var_type("int"), arr_size(-1)
-    {}
-
-    // Full constructor (for functions, arrays, etc.)
-    symbol_info(string name, string type, string ID_type, string var_type,
-                int arr_size = -1,
-                const vector<string>& param_type = {},
-                const vector<string>& param_name = {})
-        : name(name), type(type), ID_type(ID_type), var_type(var_type),
-          arr_size(arr_size), param_type(param_type), param_name(param_name)
-    {}
+    symbol_info(string name, string type) {
+        this->name = name;
+        this->type = type;
+        this->symbol_category = "";
+        this->data_type = "";
+        this->array_size = -1;
+        this->return_type = "";
+    }
 
     // Getters
-    string getname() const        { return name; }
-    string get_type() const        { return type; }
-    string get_ID_type() const     { return ID_type; }
-    string get_var_type() const    { return var_type; }
-    int get_arr_size() const       { return arr_size; }
-    vector<string> get_param_type() const { return param_type; }
-    vector<string> get_param_name() const { return param_name; }
+    string get_name() { return name; }
+    string get_type() { return type; }
+    string get_symbol_category() { return symbol_category; }
+    string get_data_type() { return data_type; }
+    int get_array_size() { return array_size; }
+    string get_return_type() { return return_type; }
+    vector<string>& get_param_types() { return param_types; }
 
     // Setters
-    void set_name(string n)        { name = n; }
-    void set_type(string t)        { type = t; }
-    void set_ID_type(string id)    { ID_type = id; }
-    void set_var_type(string vt)   { var_type = vt; }
-    void set_arr_size(int sz)      { arr_size = sz; }
-    void set_param_type(const vector<string>& pt) { param_type = pt; }
-    void set_param_name(const vector<string>& pn) { param_name = pn; }
+    void set_name(string name) { this->name = name; }
+    void set_type(string type) { this->type = type; }
+    void set_symbol_category(string category) { this->symbol_category = category; }
+    void set_data_type(string data_type) { this->data_type = data_type; }
+    void set_array_size(int size) { this->array_size = size; }
+    void set_return_type(string return_type) { this->return_type = return_type; }
+    void set_param_types(vector<string> param_types) { this->param_types = param_types; }
 
-    // Destructor (nothing to delete — vectors manage themselves)
-    ~symbol_info() = default;
+    void print(ofstream& outlog) {
+        outlog << "< " << name << " : " << type << " >" << endl;
+        if (symbol_category == "variable") {
+            outlog << "Variable" << endl;
+            outlog << "Type: " << data_type << endl;
+        } else if (symbol_category == "array") {
+            outlog << "Array" << endl;
+            outlog << "Type: " << data_type << endl;
+            outlog << "Size: " << array_size << endl;
+        } else if (symbol_category == "function") {
+            outlog << "Function Definition" << endl;
+            outlog << "Return Type: " << return_type << endl;
+            outlog << "Number of Parameters: " << param_types.size() << endl;
+            outlog << "Parameter Details: ";
+            if (param_types.empty()) {
+                outlog << endl;
+            } else {
+                for (size_t i = 0; i < param_types.size(); i++) {
+                    outlog << param_types[i];
+                    if (i < param_types.size() - 1) outlog << ", ";
+                }
+                outlog << endl;
+            }
+        }
+        outlog << endl;
+    }
+
+    ~symbol_info() {}
 };
-
-#endif // SYMBOL_INFO_H
