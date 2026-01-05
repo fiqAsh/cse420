@@ -1,0 +1,15 @@
+work on three address code file
+
+work on ast.h file declnode,var node constnode, assignnode
+
+binaryopnode
+unaryopnode
+exprstmtnode
+blocknode
+ifnode
+whilenode
+fornode
+returnnode
+funcdeclnode
+funccallnode
+programnode

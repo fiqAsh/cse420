@@ -1,3 +1,0 @@
-work on three address code file
-
-work on ast.h file declnode,var node constnode, assignnode
